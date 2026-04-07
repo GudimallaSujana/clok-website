@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { useCalendarStore } from '@/store/calendarStore';
 import dayjs from 'dayjs';
+import type { useCalendarData } from '@/hooks/useCalendarData';
 
 const COLORS = [
   { name: 'Yellow', value: 'hsl(48, 95%, 76%)' },
@@ -16,20 +17,26 @@ interface Props {
   date: string;
   open: boolean;
   onClose: () => void;
+  calendarData: ReturnType<typeof useCalendarData>;
 }
 
-export function StickyNoteModal({ date, open, onClose }: Props) {
+export function StickyNoteModal({ date, open, onClose, calendarData }: Props) {
   const [text, setText] = useState('');
   const [color, setColor] = useState(COLORS[0].value);
+  const [saving, setSaving] = useState(false);
   const { addNote } = useCalendarStore();
 
-  const handleSave = () => {
-    if (text.trim()) {
-      addNote({ date, text: text.trim(), color });
-      setText('');
-      setColor(COLORS[0].value);
-      onClose();
+  const handleSave = async () => {
+    if (!text.trim()) return;
+    setSaving(true);
+    const data = await calendarData.addNoteDB(date, text.trim(), color);
+    if (data) {
+      addNote({ id: data.id, date, text: text.trim(), color });
     }
+    setText('');
+    setColor(COLORS[0].value);
+    setSaving(false);
+    onClose();
   };
 
   return (
@@ -50,10 +57,7 @@ export function StickyNoteModal({ date, open, onClose }: Props) {
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
             className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[90vw] max-w-sm"
           >
-            <div
-              className="rounded-2xl p-6 shadow-elevated"
-              style={{ backgroundColor: color }}
-            >
+            <div className="rounded-2xl p-6 shadow-elevated" style={{ backgroundColor: color }}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-display text-lg font-semibold text-foreground">
                   {dayjs(date).format('MMM D, YYYY')}
@@ -88,8 +92,10 @@ export function StickyNoteModal({ date, open, onClose }: Props) {
 
               <button
                 onClick={handleSave}
-                className="mt-4 w-full py-2.5 rounded-xl bg-foreground/10 hover:bg-foreground/20 text-foreground font-medium text-sm transition-colors"
+                disabled={saving}
+                className="mt-4 w-full py-2.5 rounded-xl bg-foreground/10 hover:bg-foreground/20 text-foreground font-medium text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
+                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 Save Note
               </button>
             </div>

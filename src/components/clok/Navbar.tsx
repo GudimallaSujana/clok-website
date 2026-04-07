@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Moon, Sun, Menu, Clock } from 'lucide-react';
+import { Moon, Sun, Menu, Clock, LogOut } from 'lucide-react';
 import { useCalendarStore } from '@/store/calendarStore';
+import { useAuth } from '@/contexts/AuthContext';
 import dayjs from 'dayjs';
 
 export function Navbar() {
   const { isDark, toggleDark, setSidebarOpen, sidebarOpen } = useCalendarStore();
+  const { user, signOut } = useAuth();
   const [time, setTime] = useState(dayjs());
 
   useEffect(() => {
@@ -43,15 +45,22 @@ export function Navbar() {
             onClick={toggleDark}
             className="p-2 rounded-lg hover:bg-accent transition-colors"
           >
-            {isDark ? (
-              <Sun className="w-5 h-5 text-foreground" />
-            ) : (
-              <Moon className="w-5 h-5 text-foreground" />
-            )}
+            {isDark ? <Sun className="w-5 h-5 text-foreground" /> : <Moon className="w-5 h-5 text-foreground" />}
           </button>
 
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground text-sm font-semibold">U</span>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground text-sm font-semibold">
+                {user?.email?.[0]?.toUpperCase() || 'U'}
+              </span>
+            </div>
+            <button
+              onClick={signOut}
+              className="p-2 rounded-lg hover:bg-accent transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="w-4 h-4 text-foreground" />
+            </button>
           </div>
         </div>
       </div>

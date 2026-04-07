@@ -2,8 +2,13 @@ import { motion } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useCalendarStore } from '@/store/calendarStore';
+import type { useCalendarData } from '@/hooks/useCalendarData';
 
-export function NotesPanel() {
+interface Props {
+  calendarData: ReturnType<typeof useCalendarData>;
+}
+
+export function NotesPanel({ calendarData }: Props) {
   const { notes, deleteNote, selectedRange } = useCalendarStore();
 
   const filtered = selectedRange.start
@@ -16,6 +21,11 @@ export function NotesPanel() {
     : notes;
 
   if (filtered.length === 0) return null;
+
+  const handleDelete = async (id: string) => {
+    deleteNote(id);
+    await calendarData.deleteNoteDB(id);
+  };
 
   return (
     <motion.div
@@ -38,11 +48,9 @@ export function NotesPanel() {
             style={{ backgroundColor: note.color }}
           >
             <div className="flex items-start justify-between">
-              <p className="text-xs font-medium text-foreground/60">
-                {dayjs(note.date).format('MMM D')}
-              </p>
+              <p className="text-xs font-medium text-foreground/60">{dayjs(note.date).format('MMM D')}</p>
               <button
-                onClick={() => deleteNote(note.id)}
+                onClick={() => handleDelete(note.id)}
                 className="opacity-0 group-hover:opacity-100 p-1 text-destructive transition-opacity"
               >
                 <Trash2 className="w-3 h-3" />
