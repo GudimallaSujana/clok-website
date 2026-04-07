@@ -1,16 +1,9 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  CalendarDays,
-  CheckSquare,
-  Cake,
-  StickyNote,
-  X,
-  Plus,
-  Trash2,
-} from 'lucide-react';
+import { CalendarDays, CheckSquare, Cake, StickyNote, X, Plus, Trash2, Loader2 } from 'lucide-react';
 import { useCalendarStore } from '@/store/calendarStore';
 import { useState } from 'react';
 import dayjs from 'dayjs';
+import type { useCalendarData } from '@/hooks/useCalendarData';
 
 const tabs = [
   { id: 'schedule' as const, label: 'Schedule', icon: CalendarDays },
@@ -19,31 +12,19 @@ const tabs = [
   { id: 'notes' as const, label: 'Notes', icon: StickyNote },
 ];
 
-export function AppSidebar() {
-  const {
-    sidebarOpen,
-    setSidebarOpen,
-    sidebarTab,
-    setSidebarTab,
-    tasks,
-    addTask,
-    toggleTask,
-    deleteTask,
-    birthdays,
-    addBirthday,
-    deleteBirthday,
-    notes,
-    selectedRange,
-  } = useCalendarStore();
+interface Props {
+  calendarData: ReturnType<typeof useCalendarData>;
+}
+
+export function AppSidebar({ calendarData }: Props) {
+  const { sidebarOpen, setSidebarOpen } = useCalendarStore();
 
   return (
     <>
-      {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-sidebar shrink-0 h-full">
-        <SidebarContent />
+        <SidebarContent calendarData={calendarData} />
       </aside>
 
-      {/* Mobile overlay */}
       <AnimatePresence>
         {sidebarOpen && (
           <>
@@ -67,7 +48,7 @@ export function AppSidebar() {
                   <X className="w-5 h-5 text-sidebar-foreground" />
                 </button>
               </div>
-              <SidebarContent />
+              <SidebarContent calendarData={calendarData} />
             </motion.aside>
           </>
         )}
@@ -76,24 +57,55 @@ export function AppSidebar() {
   );
 }
 
-function SidebarContent() {
+function SidebarContent({ calendarData }: Props) {
   const {
-    sidebarTab,
-    setSidebarTab,
-    tasks,
-    addTask,
-    toggleTask,
-    deleteTask,
-    birthdays,
-    addBirthday,
-    deleteBirthday,
-    notes,
-    selectedRange,
+    sidebarTab, setSidebarTab,
+    tasks, addTask, toggleTask, deleteTask,
+    birthdays, addBirthday, deleteBirthday,
+    notes, selectedRange,
   } = useCalendarStore();
 
   const [newTaskText, setNewTaskText] = useState('');
   const [newBdayName, setNewBdayName] = useState('');
   const [newBdayDate, setNewBdayDate] = useState('');
+  const [taskLoading, setTaskLoading] = useState(false);
+  const [bdayLoading, setBdayLoading] = useState(false);
+
+  const handleAddTask = async () => {
+    if (!newTaskText.trim()) return;
+    setTaskLoading(true);
+    const data = await calendarData.addTaskDB(newTaskText.trim());
+    if (data) addTask({ id: data.id, title: data.title, completed: data.completed });
+    setNewTaskText('');
+    setTaskLoading(false);
+  };
+
+  const handleToggleTask = async (id: string) => {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    toggleTask(id);
+    await calendarData.toggleTaskDB(id, !task.completed);
+  };
+
+  const handleDeleteTask = async (id: string) => {
+    deleteTask(id);
+    await calendarData.deleteTaskDB(id);
+  };
+
+  const handleAddBirthday = async () => {
+    if (!newBdayName.trim() || !newBdayDate) return;
+    setBdayLoading(true);
+    const data = await calendarData.addBirthdayDB(newBdayName.trim(), newBdayDate);
+    if (data) addBirthday({ id: data.id, name: data.name, date: data.date });
+    setNewBdayName('');
+    setNewBdayDate('');
+    setBdayLoading(false);
+  };
+
+  const handleDeleteBirthday = async (id: string) => {
+    deleteBirthday(id);
+    await calendarData.deleteBirthdayDB(id);
+  };
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -129,9 +141,7 @@ function SidebarContent() {
                 {selectedRange.start ? (
                   <div className="p-3 rounded-lg bg-sidebar-accent text-sm text-sidebar-accent-foreground">
                     <p>{dayjs(selectedRange.start).format('MMM D, YYYY')}</p>
-                    {selectedRange.end && (
-                      <p>→ {dayjs(selectedRange.end).format('MMM D, YYYY')}</p>
-                    )}
+                    {selectedRange.end && <p>→ {dayjs(selectedRange.end).format('MMM D, YYYY')}</p>}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">Click dates to select a range</p>
@@ -145,48 +155,31 @@ function SidebarContent() {
                   <input
                     value={newTaskText}
                     onChange={(e) => setNewTaskText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && newTaskText.trim()) {
-                        addTask({ title: newTaskText.trim(), completed: false });
-                        setNewTaskText('');
-                      }
-                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleAddTask(); }}
                     placeholder="Add task..."
                     className="flex-1 px-3 py-2 text-sm rounded-lg bg-background border border-input text-foreground placeholder:text-muted-foreground"
                   />
                   <button
-                    onClick={() => {
-                      if (newTaskText.trim()) {
-                        addTask({ title: newTaskText.trim(), completed: false });
-                        setNewTaskText('');
-                      }
-                    }}
-                    className="p-2 rounded-lg bg-primary text-primary-foreground"
+                    onClick={handleAddTask}
+                    disabled={taskLoading}
+                    className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
                   >
-                    <Plus className="w-4 h-4" />
+                    {taskLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   </button>
                 </div>
                 {tasks.map((task) => (
                   <div key={task.id} className="flex items-center gap-2 group">
                     <button
-                      onClick={() => toggleTask(task.id)}
+                      onClick={() => handleToggleTask(task.id)}
                       className={`w-4 h-4 rounded border-2 flex-shrink-0 transition-colors ${
-                        task.completed
-                          ? 'bg-primary border-primary'
-                          : 'border-muted-foreground'
+                        task.completed ? 'bg-primary border-primary' : 'border-muted-foreground'
                       }`}
                     />
-                    <span
-                      className={`flex-1 text-sm ${
-                        task.completed
-                          ? 'line-through text-muted-foreground'
-                          : 'text-sidebar-foreground'
-                      }`}
-                    >
+                    <span className={`flex-1 text-sm ${task.completed ? 'line-through text-muted-foreground' : 'text-sidebar-foreground'}`}>
                       {task.title}
                     </span>
                     <button
-                      onClick={() => deleteTask(task.id)}
+                      onClick={() => handleDeleteTask(task.id)}
                       className="opacity-0 group-hover:opacity-100 p-1 text-destructive transition-opacity"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -212,29 +205,22 @@ function SidebarContent() {
                     className="flex-1 px-3 py-2 text-sm rounded-lg bg-background border border-input text-foreground"
                   />
                   <button
-                    onClick={() => {
-                      if (newBdayName.trim() && newBdayDate) {
-                        addBirthday({ name: newBdayName.trim(), date: newBdayDate });
-                        setNewBdayName('');
-                        setNewBdayDate('');
-                      }
-                    }}
-                    className="p-2 rounded-lg bg-primary text-primary-foreground"
+                    onClick={handleAddBirthday}
+                    disabled={bdayLoading}
+                    className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
                   >
-                    <Plus className="w-4 h-4" />
+                    {bdayLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   </button>
                 </div>
                 {birthdays.map((b) => (
                   <div key={b.id} className="flex items-center gap-2 group">
-                    <Cake className="w-4 h-4 text-primary flex-shrink-0" />
+                    <Cake className="w-5 h-5 text-primary flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-sidebar-foreground">{b.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {dayjs(b.date).format('MMM D')}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{dayjs(b.date).format('MMM D')}</p>
                     </div>
                     <button
-                      onClick={() => deleteBirthday(b.id)}
+                      onClick={() => handleDeleteBirthday(b.id)}
                       className="opacity-0 group-hover:opacity-100 p-1 text-destructive transition-opacity"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -251,14 +237,8 @@ function SidebarContent() {
                   <p className="text-sm text-muted-foreground">Click a date to add notes</p>
                 ) : (
                   notes.map((note) => (
-                    <div
-                      key={note.id}
-                      className="p-2 rounded-lg text-sm"
-                      style={{ backgroundColor: note.color }}
-                    >
-                      <p className="text-xs font-medium text-foreground/70">
-                        {dayjs(note.date).format('MMM D')}
-                      </p>
+                    <div key={note.id} className="p-2 rounded-lg text-sm" style={{ backgroundColor: note.color }}>
+                      <p className="text-xs font-medium text-foreground/70">{dayjs(note.date).format('MMM D')}</p>
                       <p className="text-foreground">{note.text}</p>
                     </div>
                   ))
