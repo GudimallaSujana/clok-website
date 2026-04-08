@@ -30,9 +30,10 @@ interface CalendarState {
   tileColors: Record<string, string>;
   dayImages: Record<string, string>;
   heroImages: Record<string, string>;
+  emojiReactions: Record<string, string[]>;
   isDark: boolean;
   sidebarOpen: boolean;
-  sidebarTab: 'schedule' | 'tasks' | 'birthdays' | 'notes';
+  sidebarTab: 'schedule' | 'tasks' | 'birthdays' | 'notes' | 'notifications';
   loading: boolean;
 
   setCurrentMonth: (month: Dayjs) => void;
@@ -54,7 +55,11 @@ interface CalendarState {
   setTileColor: (date: string, color: string) => void;
   setDayImages: (images: Record<string, string>) => void;
   setDayImage: (date: string, url: string) => void;
+  removeDayImage: (date: string) => void;
   setHeroImage: (month: string, url: string) => void;
+  removeHeroImage: (month: string) => void;
+  setEmojiReactions: (reactions: Record<string, string[]>) => void;
+  setEmojiReaction: (date: string, emojis: string[]) => void;
   toggleDark: () => void;
   setSidebarOpen: (open: boolean) => void;
   setSidebarTab: (tab: CalendarState['sidebarTab']) => void;
@@ -70,6 +75,7 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   tileColors: {},
   dayImages: {},
   heroImages: {},
+  emojiReactions: {},
   isDark: false,
   sidebarOpen: false,
   sidebarTab: 'schedule',
@@ -107,8 +113,21 @@ export const useCalendarStore = create<CalendarState>((set) => ({
 
   setDayImages: (images) => set({ dayImages: images }),
   setDayImage: (date, url) => set((s) => ({ dayImages: { ...s.dayImages, [date]: url } })),
+  removeDayImage: (date) => set((s) => {
+    const next = { ...s.dayImages };
+    delete next[date];
+    return { dayImages: next };
+  }),
 
   setHeroImage: (month, url) => set((s) => ({ heroImages: { ...s.heroImages, [month]: url } })),
+  removeHeroImage: (month) => set((s) => {
+    const next = { ...s.heroImages };
+    delete next[month];
+    return { heroImages: next };
+  }),
+
+  setEmojiReactions: (reactions) => set({ emojiReactions: reactions }),
+  setEmojiReaction: (date, emojis) => set((s) => ({ emojiReactions: { ...s.emojiReactions, [date]: emojis } })),
 
   toggleDark: () =>
     set((s) => {

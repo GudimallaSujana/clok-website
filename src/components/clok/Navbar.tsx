@@ -4,6 +4,7 @@ import { Moon, Sun, Menu, Clock, LogOut } from 'lucide-react';
 import { useCalendarStore } from '@/store/calendarStore';
 import { useAuth } from '@/contexts/AuthContext';
 import dayjs from 'dayjs';
+import clokLogo from '@/assets/clok-logo.png';
 
 export function Navbar() {
   const { isDark, toggleDark, setSidebarOpen, sidebarOpen } = useCalendarStore();
@@ -29,9 +30,7 @@ export function Navbar() {
           >
             <Menu className="w-5 h-5 text-foreground" />
           </button>
-          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground">
-            CL<span className="text-primary">O</span>K
-          </h1>
+          <img src={clokLogo} alt="CLOK" className="h-8 md:h-9 object-contain" />
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
