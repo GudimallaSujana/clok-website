@@ -79,16 +79,16 @@ export function HeroImage({ onHeroUpload, onDeleteHero }: Props) {
       {/* Context menu for hero image deletion */}
       {showContextMenu && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setShowContextMenu(null)} />
+          <div className="fixed inset-0 z-[60]" onClick={() => setShowContextMenu(null)} />
           <div
-            className="fixed z-50 bg-popover border border-border rounded-lg shadow-elevated py-1 min-w-[120px]"
+            className="fixed z-[70] bg-popover border border-border rounded-lg shadow-elevated py-1 min-w-[140px]"
             style={{ left: showContextMenu.x, top: showContextMenu.y }}
           >
             <button
               onClick={() => { onDeleteHero(); setShowContextMenu(null); }}
-              className="w-full px-3 py-1.5 text-sm text-destructive hover:bg-accent text-left"
+              className="w-full px-3 py-2 text-sm text-destructive hover:bg-accent text-left"
             >
-              Delete Image
+              🗑️ Delete Image
             </button>
           </div>
         </>

@@ -133,7 +133,11 @@ function SidebarContent({ calendarData }: Props) {
       }
     });
 
-    return items.sort((a, b) => dayjs(a.date).diff(dayjs(b.date)));
+    return items.sort((a, b) => {
+      const dateA = dayjs(a.date, 'MMM D');
+      const dateB = dayjs(b.date, 'MMM D');
+      return dateA.valueOf() - dateB.valueOf();
+    });
   }, [birthdays, tasks]);
 
   return (
