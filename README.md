@@ -1,4 +1,4 @@
-<img width="1828" height="988" alt="image" src="https://github.com/user-attachments/assets/97371b0a-0a0e-467d-ad1c-d8e5566e8bee" /># 🕰️ CLOK — Aesthetic Smart Calendar Web App
+🕰️ CLOK — Aesthetic Smart Calendar Web App
 
 CLOK is a modern, interactive calendar web application that combines **productivity, journaling, and visual storytelling** into one seamless experience.
 It goes beyond traditional calendars by integrating **events, notes, images, tasks, and holidays** into a single intuitive interface.
