@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StickyNote, ImagePlus, Smile, CheckSquare } from 'lucide-react';
 import dayjs from 'dayjs';
@@ -7,7 +7,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import type { Holiday } from '@/hooks/useHolidays';
 import type { useCalendarData } from '@/hooks/useCalendarData';
 
-const QUICK_EMOJIS = ['❤️', '👍', '⭐', '🔥', '😊', '🎉', '💪', '🌟'];
+const EMOJI_CATEGORIES = [
+  { label: 'Smileys', emojis: ['😊', '😂', '🥰', '😍', '😘', '😎', '🤩', '😇', '🥳', '😜', '🤗', '😏', '🤔', '😴', '🤯', '😱'] },
+  { label: 'Gestures', emojis: ['👍', '👎', '👏', '🙌', '🤝', '✌️', '🤞', '💪', '👋', '🫡', '🫶', '👊'] },
+  { label: 'Hearts', emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💖', '💝', '💔', '❣️'] },
+  { label: 'Symbols', emojis: ['⭐', '🌟', '✨', '🔥', '💯', '🎯', '🏆', '🎉', '🎊', '🎁', '🎵', '💡'] },
+  { label: 'Nature', emojis: ['🌸', '🌺', '🌻', '🌹', '🍀', '🌈', '☀️', '🌙', '⛅', '❄️', '🦋', '🐱'] },
+  { label: 'Food', emojis: ['🍕', '🍔', '🍰', '🧁', '🍩', '☕', '🍺', '🥂', '🍎', '🍓', '🥑', '🌮'] },
+];
 
 interface Props {
   date: dayjs.Dayjs;
@@ -46,9 +53,18 @@ export function DayTile({ date, isCurrentMonth, onNoteClick, onImageUpload, onDe
   else if (isEnd) rangeClass = 'calendar-range-end';
   else if (isInRange) rangeClass = 'calendar-range';
 
+  // Close emoji picker on click outside
+  useEffect(() => {
+    if (!showEmojiPicker) return;
+    const handler = () => setShowEmojiPicker(false);
+    const timer = setTimeout(() => document.addEventListener('click', handler), 0);
+    return () => { clearTimeout(timer); document.removeEventListener('click', handler); };
+  }, [showEmojiPicker]);
+
   const handleContextMenu = (e: React.MouseEvent) => {
     if (dayImage) {
       e.preventDefault();
+      e.stopPropagation();
       setShowContextMenu({ x: e.clientX, y: e.clientY });
     }
   };
@@ -64,7 +80,13 @@ export function DayTile({ date, isCurrentMonth, onNoteClick, onImageUpload, onDe
     if (idx >= 0) current.splice(idx, 1);
     else current.push(emoji);
     setEmojiReaction(dateStr, current);
-    setShowEmojiPicker(false);
+    // Don't close picker on select - let user add multiple
+    await calendarData.setEmojiReactionDB(dateStr, current);
+  };
+
+  const handleEmojiRemove = async (emoji: string) => {
+    const current = reactions.filter(e => e !== emoji);
+    setEmojiReaction(dateStr, current);
     await calendarData.setEmojiReactionDB(dateStr, current);
   };
 
@@ -104,7 +126,21 @@ export function DayTile({ date, isCurrentMonth, onNoteClick, onImageUpload, onDe
         {hasTask && <CheckSquare className="w-3 h-3 text-primary" />}
         {hasHoliday && <span className="text-xs md:text-sm">🎉</span>}
         {reactions.length > 0 && (
-          <span className="text-[10px] md:text-xs leading-none">{reactions.slice(0, 3).join('')}</span>
+          <div className="flex gap-0.5 flex-wrap justify-center">
+            {reactions.slice(0, 4).map((emoji, i) => (
+              <button
+                key={`${emoji}-${i}`}
+                onClick={(e) => { e.stopPropagation(); handleEmojiRemove(emoji); }}
+                className="text-[10px] md:text-xs leading-none hover:scale-125 transition-transform cursor-pointer"
+                title="Tap to remove"
+              >
+                {emoji}
+              </button>
+            ))}
+            {reactions.length > 4 && (
+              <span className="text-[8px] text-muted-foreground">+{reactions.length - 4}</span>
+            )}
+          </div>
         )}
       </div>
 
@@ -151,7 +187,7 @@ export function DayTile({ date, isCurrentMonth, onNoteClick, onImageUpload, onDe
     </motion.div>
   );
 
-  const wrappedContent = (
+  return (
     <div className="relative">
       {hasHoliday && isCurrentMonth ? (
         <Tooltip>
@@ -166,26 +202,33 @@ export function DayTile({ date, isCurrentMonth, onNoteClick, onImageUpload, onDe
         </Tooltip>
       ) : tileContent}
 
-      {/* Emoji picker popup */}
+      {/* Emoji picker popup - WhatsApp style */}
       <AnimatePresence>
         {showEmojiPicker && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute bottom-full left-0 mb-1 z-30 bg-popover border border-border rounded-lg p-1.5 shadow-elevated flex gap-1 flex-wrap w-36"
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            className="absolute bottom-full left-0 mb-1 z-50 bg-popover border border-border rounded-xl p-2 shadow-elevated w-52 max-h-48 overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {QUICK_EMOJIS.map((emoji) => (
-              <button
-                key={emoji}
-                onClick={() => handleEmojiSelect(emoji)}
-                className={`text-base hover:scale-125 transition-transform p-0.5 rounded ${
-                  reactions.includes(emoji) ? 'bg-primary/20' : ''
-                }`}
-              >
-                {emoji}
-              </button>
+            {EMOJI_CATEGORIES.map((cat) => (
+              <div key={cat.label} className="mb-1.5">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold mb-0.5 px-0.5">{cat.label}</p>
+                <div className="flex flex-wrap gap-0.5">
+                  {cat.emojis.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => handleEmojiSelect(emoji)}
+                      className={`text-sm hover:scale-125 transition-transform p-0.5 rounded ${
+                        reactions.includes(emoji) ? 'bg-primary/20 ring-1 ring-primary/40' : 'hover:bg-accent'
+                      }`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </motion.div>
         )}
@@ -194,22 +237,20 @@ export function DayTile({ date, isCurrentMonth, onNoteClick, onImageUpload, onDe
       {/* Context menu for image deletion */}
       {showContextMenu && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setShowContextMenu(null)} />
+          <div className="fixed inset-0 z-[60]" onClick={() => setShowContextMenu(null)} />
           <div
-            className="fixed z-50 bg-popover border border-border rounded-lg shadow-elevated py-1 min-w-[120px]"
+            className="fixed z-[70] bg-popover border border-border rounded-lg shadow-elevated py-1 min-w-[140px]"
             style={{ left: showContextMenu.x, top: showContextMenu.y }}
           >
             <button
               onClick={handleDeleteImage}
-              className="w-full px-3 py-1.5 text-sm text-destructive hover:bg-accent text-left"
+              className="w-full px-3 py-2 text-sm text-destructive hover:bg-accent text-left"
             >
-              Delete Image
+              🗑️ Delete Image
             </button>
           </div>
         </>
       )}
     </div>
   );
-
-  return wrappedContent;
 }
