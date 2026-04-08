@@ -1,4 +1,4 @@
-🕰️ CLOK — Aesthetic Smart Calendar Web App
+🕰️ **CLOK — Aesthetic Smart Calendar Web App**
 
 CLOK is a modern, interactive calendar web application that combines **productivity, journaling, and visual storytelling** into one seamless experience.
 It goes beyond traditional calendars by integrating **events, notes, images, tasks, and holidays** into a single intuitive interface.
@@ -55,6 +55,7 @@ It goes beyond traditional calendars by integrating **events, notes, images, tas
 
 <img width="1909" height="990" alt="image" src="https://github.com/user-attachments/assets/35d17ae0-2a79-4376-9ff3-fab61a4c1d46" />
 
+
 📝 Notes Feature
 
 <img width="1837" height="995" alt="image" src="https://github.com/user-attachments/assets/539bc713-a29a-4001-90b4-b07f6b7d3a96" />
@@ -68,6 +69,7 @@ It goes beyond traditional calendars by integrating **events, notes, images, tas
 🎂 Birthday Reminder
 
 <img width="1128" height="990" alt="image" src="https://github.com/user-attachments/assets/1ca8d51e-52da-417b-bbf4-16d717b15015" />
+
 
 ☑️ Task Completion
 
