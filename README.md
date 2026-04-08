@@ -62,7 +62,8 @@ It goes beyond traditional calendars by integrating **events, notes, images, tas
 
 🖼️ Image Upload Feature
 
-<img width="1828" height="988" alt="image" src="https://github.com/user-attachments/assets/efe6ceb4-65e8-4dc1-8dda-9a3a02f1264c" />
+<img width="1840" height="998" alt="image" src="https://github.com/user-attachments/assets/11b9567d-7c8c-4b63-ae6f-de98c3e3a021" />
+
 
 🎂 Birthday Reminder
 
@@ -201,16 +202,16 @@ npm run dev
 
 ---
 
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
 ## 📎 Links
 
 * 🌐 **Live Demo:** <ADD_DEPLOYED_LINK_HERE>
 * 📂 **GitHub Repo:** https://github.com/GudimallaSujana/clok-website.git
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
 
 ---
 
