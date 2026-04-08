@@ -45,6 +45,7 @@ export type Database = {
         Row: {
           created_at: string
           date: string
+          emoji_reactions: string | null
           id: string
           image_url: string | null
           note: string | null
@@ -56,6 +57,7 @@ export type Database = {
         Insert: {
           created_at?: string
           date: string
+          emoji_reactions?: string | null
           id?: string
           image_url?: string | null
           note?: string | null
@@ -67,11 +69,39 @@ export type Database = {
         Update: {
           created_at?: string
           date?: string
+          emoji_reactions?: string | null
           id?: string
           image_url?: string | null
           note?: string | null
           note_color?: string | null
           tile_color?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hero_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          month_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          month_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          month_key?: string
           updated_at?: string
           user_id?: string
         }
