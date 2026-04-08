@@ -12,8 +12,8 @@ import type { useCalendarData } from '@/hooks/useCalendarData';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-const tearSound = new Audio('/tear.wav');
-const addSound = new Audio('/page-add.wav');
+const tearSound = new Audio('/tear.mp3');
+const addSound = new Audio('/page-add.mp3');
 tearSound.volume = 0.5;
 addSound.volume = 0.5;
 
