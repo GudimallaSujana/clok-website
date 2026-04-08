@@ -214,6 +214,7 @@ This project is licensed under the MIT License.
 
 * 🌐 **Live Demo:** <ADD_DEPLOYED_LINK_HERE>
 * 📂 **GitHub Repo:** https://github.com/GudimallaSujana/clok-website.git
+* 🈸**Deployed website link:** https://clokcalendarwebsite.vercel.app
 
 ---
 
@@ -223,3 +224,5 @@ This project is licensed under the MIT License.
 
 * GitHub: https://github.com/GudimallaSujana
 * LinkedIn: https://www.linkedin.com/in/sujana-gudimalla/
+* Gmail: sujjugud@gmail.com
+* Contact Number: 7680844202
