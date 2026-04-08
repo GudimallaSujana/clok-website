@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarDays, CheckSquare, Cake, StickyNote, X, Plus, Trash2, Loader2 } from 'lucide-react';
+import { CalendarDays, CheckSquare, Cake, StickyNote, X, Plus, Trash2, Loader2, Bell } from 'lucide-react';
 import { useCalendarStore } from '@/store/calendarStore';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import dayjs from 'dayjs';
 import type { useCalendarData } from '@/hooks/useCalendarData';
 
@@ -10,6 +10,7 @@ const tabs = [
   { id: 'tasks' as const, label: 'Tasks', icon: CheckSquare },
   { id: 'birthdays' as const, label: 'Birthdays', icon: Cake },
   { id: 'notes' as const, label: 'Notes', icon: StickyNote },
+  { id: 'notifications' as const, label: 'Notifications', icon: Bell },
 ];
 
 interface Props {
@@ -66,6 +67,7 @@ function SidebarContent({ calendarData }: Props) {
   } = useCalendarStore();
 
   const [newTaskText, setNewTaskText] = useState('');
+  const [newTaskDate, setNewTaskDate] = useState('');
   const [newBdayName, setNewBdayName] = useState('');
   const [newBdayDate, setNewBdayDate] = useState('');
   const [taskLoading, setTaskLoading] = useState(false);
@@ -74,9 +76,10 @@ function SidebarContent({ calendarData }: Props) {
   const handleAddTask = async () => {
     if (!newTaskText.trim()) return;
     setTaskLoading(true);
-    const data = await calendarData.addTaskDB(newTaskText.trim());
-    if (data) addTask({ id: data.id, title: data.title, completed: data.completed });
+    const data = await calendarData.addTaskDB(newTaskText.trim(), newTaskDate || undefined);
+    if (data) addTask({ id: data.id, title: data.title, completed: data.completed, date: data.date || undefined });
     setNewTaskText('');
+    setNewTaskDate('');
     setTaskLoading(false);
   };
 
@@ -107,6 +110,32 @@ function SidebarContent({ calendarData }: Props) {
     await calendarData.deleteBirthdayDB(id);
   };
 
+  // Generate notifications
+  const notifications = useMemo(() => {
+    const items: { type: string; text: string; date: string; icon: string }[] = [];
+    const today = dayjs();
+    const nextWeek = today.add(7, 'day');
+
+    // Upcoming birthdays within 7 days
+    birthdays.forEach((b) => {
+      const bdayThisYear = dayjs(b.date).year(today.year());
+      const bdayCheck = bdayThisYear.isBefore(today) ? bdayThisYear.add(1, 'year') : bdayThisYear;
+      if (bdayCheck.isBefore(nextWeek) && !bdayCheck.isBefore(today, 'day')) {
+        items.push({ type: 'birthday', text: `${b.name}'s birthday`, date: bdayCheck.format('MMM D'), icon: '🎂' });
+      }
+    });
+
+    // Upcoming tasks within 7 days
+    tasks.filter((t) => t.date && !t.completed).forEach((t) => {
+      const taskDate = dayjs(t.date);
+      if (taskDate.isBefore(nextWeek) && !taskDate.isBefore(today, 'day')) {
+        items.push({ type: 'task', text: t.title, date: taskDate.format('MMM D'), icon: '✅' });
+      }
+    });
+
+    return items.sort((a, b) => dayjs(a.date).diff(dayjs(b.date)));
+  }, [birthdays, tasks]);
+
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <nav className="p-3 space-y-1">
@@ -114,7 +143,7 @@ function SidebarContent({ calendarData }: Props) {
           <button
             key={tab.id}
             onClick={() => setSidebarTab(tab.id)}
-            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative ${
               sidebarTab === tab.id
                 ? 'bg-sidebar-accent text-sidebar-primary'
                 : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
@@ -122,6 +151,11 @@ function SidebarContent({ calendarData }: Props) {
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
+            {tab.id === 'notifications' && notifications.length > 0 && (
+              <span className="ml-auto bg-primary text-primary-foreground text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
+                {notifications.length}
+              </span>
+            )}
           </button>
         ))}
       </nav>
@@ -151,21 +185,29 @@ function SidebarContent({ calendarData }: Props) {
 
             {sidebarTab === 'tasks' && (
               <div className="space-y-3">
-                <div className="flex gap-2">
+                <div className="space-y-2">
                   <input
                     value={newTaskText}
                     onChange={(e) => setNewTaskText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleAddTask(); }}
                     placeholder="Add task..."
-                    className="flex-1 px-3 py-2 text-sm rounded-lg bg-background border border-input text-foreground placeholder:text-muted-foreground"
+                    className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-input text-foreground placeholder:text-muted-foreground"
                   />
-                  <button
-                    onClick={handleAddTask}
-                    disabled={taskLoading}
-                    className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
-                  >
-                    {taskLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                  </button>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={newTaskDate}
+                      onChange={(e) => setNewTaskDate(e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm rounded-lg bg-background border border-input text-foreground"
+                    />
+                    <button
+                      onClick={handleAddTask}
+                      disabled={taskLoading}
+                      className="p-2 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
+                    >
+                      {taskLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
                 {tasks.map((task) => (
                   <div key={task.id} className="flex items-center gap-2 group">
@@ -175,9 +217,14 @@ function SidebarContent({ calendarData }: Props) {
                         task.completed ? 'bg-primary border-primary' : 'border-muted-foreground'
                       }`}
                     />
-                    <span className={`flex-1 text-sm ${task.completed ? 'line-through text-muted-foreground' : 'text-sidebar-foreground'}`}>
-                      {task.title}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span className={`block text-sm truncate ${task.completed ? 'line-through text-muted-foreground' : 'text-sidebar-foreground'}`}>
+                        {task.title}
+                      </span>
+                      {task.date && (
+                        <span className="text-[10px] text-muted-foreground">{dayjs(task.date).format('MMM D')}</span>
+                      )}
+                    </div>
                     <button
                       onClick={() => handleDeleteTask(task.id)}
                       className="opacity-0 group-hover:opacity-100 p-1 text-destructive transition-opacity"
@@ -240,6 +287,25 @@ function SidebarContent({ calendarData }: Props) {
                     <div key={note.id} className="p-2 rounded-lg text-sm" style={{ backgroundColor: note.color }}>
                       <p className="text-xs font-medium text-foreground/70">{dayjs(note.date).format('MMM D')}</p>
                       <p className="text-foreground">{note.text}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {sidebarTab === 'notifications' && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-sidebar-foreground">Upcoming</h3>
+                {notifications.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No upcoming events</p>
+                ) : (
+                  notifications.map((n, i) => (
+                    <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-sidebar-accent/50">
+                      <span className="text-base">{n.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-sidebar-foreground truncate">{n.text}</p>
+                        <p className="text-[10px] text-muted-foreground">{n.date}</p>
+                      </div>
                     </div>
                   ))
                 )}

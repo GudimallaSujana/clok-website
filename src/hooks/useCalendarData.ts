@@ -8,17 +8,18 @@ export function useCalendarData() {
   const { user } = useAuth();
   const {
     setNotes, setTasks, setBirthdays, setTileColors, setDayImages,
-    setLoading,
+    setLoading, setEmojiReactions, setHeroImage,
   } = useCalendarStore();
 
   const fetchAll = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [calRes, taskRes, bdayRes] = await Promise.all([
+      const [calRes, taskRes, bdayRes, heroRes] = await Promise.all([
         supabase.from('calendar_data').select('*').eq('user_id', user.id),
         supabase.from('tasks').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('birthdays').select('*').eq('user_id', user.id).order('date'),
+        supabase.from('hero_images').select('*').eq('user_id', user.id),
       ]);
 
       if (calRes.data) {
@@ -27,13 +28,18 @@ export function useCalendarData() {
           .map((d) => ({ id: d.id, date: d.date, text: d.note!, color: d.note_color || 'hsl(48, 95%, 76%)' }));
         const colors: Record<string, string> = {};
         const images: Record<string, string> = {};
+        const reactions: Record<string, string[]> = {};
         calRes.data.forEach((d) => {
           if (d.tile_color) colors[d.date] = d.tile_color;
           if (d.image_url) images[d.date] = d.image_url;
+          if ((d as any).emoji_reactions) {
+            try { reactions[d.date] = JSON.parse((d as any).emoji_reactions); } catch {}
+          }
         });
         setNotes(notes);
         setTileColors(colors);
         setDayImages(images);
+        setEmojiReactions(reactions);
       }
 
       if (taskRes.data) {
@@ -43,21 +49,24 @@ export function useCalendarData() {
       if (bdayRes.data) {
         setBirthdays(bdayRes.data.map((b) => ({ id: b.id, name: b.name, date: b.date })));
       }
+
+      if (heroRes.data) {
+        heroRes.data.forEach((h: any) => setHeroImage(h.month_key, h.image_url));
+      }
     } catch {
       toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
-  }, [user, setNotes, setTasks, setBirthdays, setTileColors, setDayImages, setLoading]);
+  }, [user, setNotes, setTasks, setBirthdays, setTileColors, setDayImages, setLoading, setEmojiReactions, setHeroImage]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  // DB operations
   const addNoteDB = async (date: string, text: string, color: string) => {
     if (!user) return;
     const { data, error } = await supabase
       .from('calendar_data')
-      .upsert({ user_id: user.id, date, note: text, note_color: color }, { onConflict: 'user_id,date' })
+      .upsert({ user_id: user.id, date, note: text, note_color: color } as any, { onConflict: 'user_id,date' })
       .select()
       .single();
     if (error) { toast.error('Failed to save note'); return; }
@@ -69,11 +78,11 @@ export function useCalendarData() {
     await supabase.from('calendar_data').update({ note: null, note_color: null }).eq('id', id).eq('user_id', user.id);
   };
 
-  const addTaskDB = async (title: string) => {
+  const addTaskDB = async (title: string, date?: string) => {
     if (!user) return;
     const { data, error } = await supabase
       .from('tasks')
-      .insert({ user_id: user.id, title, completed: false })
+      .insert({ user_id: user.id, title, completed: false, date: date || null })
       .select()
       .single();
     if (error) { toast.error('Failed to save task'); return; }
@@ -115,8 +124,13 @@ export function useCalendarData() {
     const url = urlData.publicUrl;
     await supabase
       .from('calendar_data')
-      .upsert({ user_id: user.id, date, image_url: url }, { onConflict: 'user_id,date' });
+      .upsert({ user_id: user.id, date, image_url: url } as any, { onConflict: 'user_id,date' });
     return url;
+  };
+
+  const deleteDayImageDB = async (date: string) => {
+    if (!user) return;
+    await supabase.from('calendar_data').update({ image_url: null }).eq('user_id', user.id).eq('date', date);
   };
 
   const uploadHeroImage = async (file: File, month: string) => {
@@ -125,14 +139,30 @@ export function useCalendarData() {
     const { error: uploadError } = await supabase.storage.from('calendar-images').upload(path, file);
     if (uploadError) { toast.error('Failed to upload hero image'); return; }
     const { data: urlData } = supabase.storage.from('calendar-images').getPublicUrl(path);
-    return urlData.publicUrl;
+    const url = urlData.publicUrl;
+    await supabase
+      .from('hero_images' as any)
+      .upsert({ user_id: user.id, month_key: month, image_url: url }, { onConflict: 'user_id,month_key' });
+    return url;
+  };
+
+  const deleteHeroImageDB = async (month: string) => {
+    if (!user) return;
+    await supabase.from('hero_images' as any).delete().eq('user_id', user.id).eq('month_key', month);
   };
 
   const setTileColorDB = async (date: string, color: string) => {
     if (!user) return;
     await supabase
       .from('calendar_data')
-      .upsert({ user_id: user.id, date, tile_color: color }, { onConflict: 'user_id,date' });
+      .upsert({ user_id: user.id, date, tile_color: color } as any, { onConflict: 'user_id,date' });
+  };
+
+  const setEmojiReactionDB = async (date: string, emojis: string[]) => {
+    if (!user) return;
+    await supabase
+      .from('calendar_data')
+      .upsert({ user_id: user.id, date, emoji_reactions: JSON.stringify(emojis) } as any, { onConflict: 'user_id,date' });
   };
 
   return {
@@ -141,6 +171,7 @@ export function useCalendarData() {
     addTaskDB, toggleTaskDB, deleteTaskDB,
     addBirthdayDB, deleteBirthdayDB,
     uploadDayImage, uploadHeroImage,
-    setTileColorDB,
+    deleteDayImageDB, deleteHeroImageDB,
+    setTileColorDB, setEmojiReactionDB,
   };
 }

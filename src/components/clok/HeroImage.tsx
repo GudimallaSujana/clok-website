@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ImagePlus } from 'lucide-react';
 import heroImg from '@/assets/hero-january.jpg';
@@ -6,18 +6,28 @@ import { useCalendarStore } from '@/store/calendarStore';
 
 interface Props {
   onHeroUpload: (file: File) => void;
+  onDeleteHero: () => void;
 }
 
-export function HeroImage({ onHeroUpload }: Props) {
+export function HeroImage({ onHeroUpload, onDeleteHero }: Props) {
   const { currentMonth, heroImages } = useCalendarStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const monthKey = currentMonth.format('YYYY-MM');
   const customHero = heroImages[monthKey];
+  const [showContextMenu, setShowContextMenu] = useState<{ x: number; y: number } | null>(null);
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (customHero) {
+      e.preventDefault();
+      setShowContextMenu({ x: e.clientX, y: e.clientY });
+    }
+  };
 
   return (
     <motion.div
       className="relative w-full overflow-hidden rounded-t-2xl group"
       style={{ height: 'clamp(180px, 30vw, 320px)' }}
+      onContextMenu={handleContextMenu}
     >
       <motion.img
         key={customHero || monthKey}
@@ -32,7 +42,6 @@ export function HeroImage({ onHeroUpload }: Props) {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent" />
 
-      {/* Upload hero image button on hover */}
       <button
         onClick={() => fileInputRef.current?.click()}
         className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 p-2.5 rounded-xl bg-foreground/20 backdrop-blur-sm hover:bg-foreground/30 transition-all z-20"
@@ -59,13 +68,31 @@ export function HeroImage({ onHeroUpload }: Props) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2, duration: 0.5 }}
       >
-        <h2 className="font-display text-3xl md:text-5xl font-bold text-card drop-shadow-lg">
+        <h2 className="font-display text-3xl md:text-5xl font-bold text-white drop-shadow-lg">
           {currentMonth.format('MMMM')}
         </h2>
-        <p className="font-body text-lg md:text-xl text-card/80 drop-shadow">
+        <p className="font-body text-lg md:text-xl text-white/80 drop-shadow">
           {currentMonth.format('YYYY')}
         </p>
       </motion.div>
+
+      {/* Context menu for hero image deletion */}
+      {showContextMenu && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowContextMenu(null)} />
+          <div
+            className="fixed z-50 bg-popover border border-border rounded-lg shadow-elevated py-1 min-w-[120px]"
+            style={{ left: showContextMenu.x, top: showContextMenu.y }}
+          >
+            <button
+              onClick={() => { onDeleteHero(); setShowContextMenu(null); }}
+              className="w-full px-3 py-1.5 text-sm text-destructive hover:bg-accent text-left"
+            >
+              Delete Image
+            </button>
+          </div>
+        </>
+      )}
     </motion.div>
   );
 }
