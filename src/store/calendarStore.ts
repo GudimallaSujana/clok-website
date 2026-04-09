@@ -82,6 +82,7 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   selectedRange: { start: null, end: null },
   notes: [],
   tasks: [],
+  schedules: [],
   birthdays: [],
   tileColors: {},
   dayImages: {},
@@ -118,6 +119,10 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   setBirthdays: (birthdays) => set({ birthdays }),
   addBirthday: (b) => set((s) => ({ birthdays: [...s.birthdays, b] })),
   deleteBirthday: (id) => set((s) => ({ birthdays: s.birthdays.filter((b) => b.id !== id) })),
+
+  setSchedules: (schedules) => set({ schedules }),
+  addSchedule: (schedule) => set((s) => ({ schedules: [...s.schedules, schedule] })),
+  deleteSchedule: (id) => set((s) => ({ schedules: s.schedules.filter((s2) => s2.id !== id) })),
 
   setTileColors: (colors) => set({ tileColors: colors }),
   setTileColor: (date, color) => set((s) => ({ tileColors: { ...s.tileColors, [date]: color } })),
