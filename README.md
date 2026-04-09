@@ -61,7 +61,7 @@ It goes beyond traditional calendars by integrating **events, notes, images, tas
 <img width="1837" height="995" alt="image" src="https://github.com/user-attachments/assets/539bc713-a29a-4001-90b4-b07f6b7d3a96" />
 
 
-🖼️ Image Upload Feature
+🖼️ Journaling (Image Upload Feature)
 
 <img width="1840" height="998" alt="image" src="https://github.com/user-attachments/assets/11b9567d-7c8c-4b63-ae6f-de98c3e3a021" />
 
@@ -74,6 +74,10 @@ It goes beyond traditional calendars by integrating **events, notes, images, tas
 ☑️ Task Completion
 
 <img width="1840" height="999" alt="image" src="https://github.com/user-attachments/assets/f44fe2ad-6d03-4313-afd1-dddc528fd461" />
+
+📲 Responsive (Mobile view)
+
+<img width="1867" height="1066" alt="image" src="https://github.com/user-attachments/assets/65c79aaa-dbd4-4635-9ce3-70e5e3a4fe43" />
 
 ---
 
@@ -201,12 +205,6 @@ npm run dev
 * Drag-and-drop event management
 * Theme adaptation based on images
 * Story mode (timeline view)
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
 
 ---
 
