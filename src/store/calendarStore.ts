@@ -33,6 +33,7 @@ interface CalendarState {
   selectedRange: { start: string | null; end: string | null };
   notes: Note[];
   tasks: Task[];
+  schedules: Schedule[];
   birthdays: Birthday[];
   tileColors: Record<string, string>;
   dayImages: Record<string, string>;
@@ -58,6 +59,9 @@ interface CalendarState {
   setBirthdays: (birthdays: Birthday[]) => void;
   addBirthday: (birthday: Birthday) => void;
   deleteBirthday: (id: string) => void;
+  setSchedules: (schedules: Schedule[]) => void;
+  addSchedule: (schedule: Schedule) => void;
+  deleteSchedule: (id: string) => void;
   setTileColors: (colors: Record<string, string>) => void;
   setTileColor: (date: string, color: string) => void;
   setDayImages: (images: Record<string, string>) => void;
