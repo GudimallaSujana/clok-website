@@ -54,12 +54,16 @@ export function useCalendarData() {
       if (heroRes.data) {
         heroRes.data.forEach((h: any) => setHeroImage(h.month_key, h.image_url));
       }
+
+      if (schedRes.data) {
+        setSchedules(schedRes.data.map((s: any) => ({ id: s.id, title: s.title, start_date: s.start_date, end_date: s.end_date || undefined })));
+      }
     } catch {
       toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
-  }, [user, setNotes, setTasks, setBirthdays, setTileColors, setDayImages, setLoading, setEmojiReactions, setHeroImage]);
+  }, [user, setNotes, setTasks, setBirthdays, setTileColors, setDayImages, setLoading, setEmojiReactions, setHeroImage, setSchedules]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
