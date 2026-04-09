@@ -21,11 +21,19 @@ export interface Birthday {
   date: string;
 }
 
+export interface Schedule {
+  id: string;
+  title: string;
+  start_date: string;
+  end_date?: string;
+}
+
 interface CalendarState {
   currentMonth: Dayjs;
   selectedRange: { start: string | null; end: string | null };
   notes: Note[];
   tasks: Task[];
+  schedules: Schedule[];
   birthdays: Birthday[];
   tileColors: Record<string, string>;
   dayImages: Record<string, string>;
@@ -51,6 +59,9 @@ interface CalendarState {
   setBirthdays: (birthdays: Birthday[]) => void;
   addBirthday: (birthday: Birthday) => void;
   deleteBirthday: (id: string) => void;
+  setSchedules: (schedules: Schedule[]) => void;
+  addSchedule: (schedule: Schedule) => void;
+  deleteSchedule: (id: string) => void;
   setTileColors: (colors: Record<string, string>) => void;
   setTileColor: (date: string, color: string) => void;
   setDayImages: (images: Record<string, string>) => void;
@@ -71,6 +82,7 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   selectedRange: { start: null, end: null },
   notes: [],
   tasks: [],
+  schedules: [],
   birthdays: [],
   tileColors: {},
   dayImages: {},
@@ -107,6 +119,10 @@ export const useCalendarStore = create<CalendarState>((set) => ({
   setBirthdays: (birthdays) => set({ birthdays }),
   addBirthday: (b) => set((s) => ({ birthdays: [...s.birthdays, b] })),
   deleteBirthday: (id) => set((s) => ({ birthdays: s.birthdays.filter((b) => b.id !== id) })),
+
+  setSchedules: (schedules) => set({ schedules }),
+  addSchedule: (schedule) => set((s) => ({ schedules: [...s.schedules, schedule] })),
+  deleteSchedule: (id) => set((s) => ({ schedules: s.schedules.filter((s2) => s2.id !== id) })),
 
   setTileColors: (colors) => set({ tileColors: colors }),
   setTileColor: (date, color) => set((s) => ({ tileColors: { ...s.tileColors, [date]: color } })),

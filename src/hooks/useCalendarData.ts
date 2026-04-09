@@ -8,18 +8,19 @@ export function useCalendarData() {
   const { user } = useAuth();
   const {
     setNotes, setTasks, setBirthdays, setTileColors, setDayImages,
-    setLoading, setEmojiReactions, setHeroImage,
+    setLoading, setEmojiReactions, setHeroImage, setSchedules,
   } = useCalendarStore();
 
   const fetchAll = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [calRes, taskRes, bdayRes, heroRes] = await Promise.all([
+      const [calRes, taskRes, bdayRes, heroRes, schedRes] = await Promise.all([
         supabase.from('calendar_data').select('*').eq('user_id', user.id),
         supabase.from('tasks').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('birthdays').select('*').eq('user_id', user.id).order('date'),
         supabase.from('hero_images').select('*').eq('user_id', user.id),
+        supabase.from('schedules').select('*').eq('user_id', user.id).order('start_date'),
       ]);
 
       if (calRes.data) {
@@ -53,12 +54,16 @@ export function useCalendarData() {
       if (heroRes.data) {
         heroRes.data.forEach((h: any) => setHeroImage(h.month_key, h.image_url));
       }
+
+      if (schedRes.data) {
+        setSchedules(schedRes.data.map((s: any) => ({ id: s.id, title: s.title, start_date: s.start_date, end_date: s.end_date || undefined })));
+      }
     } catch {
       toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
-  }, [user, setNotes, setTasks, setBirthdays, setTileColors, setDayImages, setLoading, setEmojiReactions, setHeroImage]);
+  }, [user, setNotes, setTasks, setBirthdays, setTileColors, setDayImages, setLoading, setEmojiReactions, setHeroImage, setSchedules]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -165,11 +170,28 @@ export function useCalendarData() {
       .upsert({ user_id: user.id, date, emoji_reactions: JSON.stringify(emojis) } as any, { onConflict: 'user_id,date' });
   };
 
+  const addScheduleDB = async (title: string, start_date: string, end_date?: string) => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('schedules')
+      .insert({ user_id: user.id, title, start_date, end_date: end_date || null } as any)
+      .select()
+      .single();
+    if (error) { toast.error('Failed to save schedule'); return; }
+    return data;
+  };
+
+  const deleteScheduleDB = async (id: string) => {
+    if (!user) return;
+    await supabase.from('schedules').delete().eq('id', id).eq('user_id', user.id);
+  };
+
   return {
     fetchAll,
     addNoteDB, deleteNoteDB,
     addTaskDB, toggleTaskDB, deleteTaskDB,
     addBirthdayDB, deleteBirthdayDB,
+    addScheduleDB, deleteScheduleDB,
     uploadDayImage, uploadHeroImage,
     deleteDayImageDB, deleteHeroImageDB,
     setTileColorDB, setEmojiReactionDB,
