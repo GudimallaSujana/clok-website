@@ -21,6 +21,13 @@ export interface Birthday {
   date: string;
 }
 
+export interface Schedule {
+  id: string;
+  title: string;
+  start_date: string;
+  end_date?: string;
+}
+
 interface CalendarState {
   currentMonth: Dayjs;
   selectedRange: { start: string | null; end: string | null };
