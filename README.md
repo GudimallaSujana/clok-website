@@ -55,6 +55,10 @@ It goes beyond traditional calendars by integrating **events, notes, images, moo
 
 <img width="1909" height="990" alt="image" src="https://github.com/user-attachments/assets/35d17ae0-2a79-4376-9ff3-fab61a4c1d46" />
 
+🕑 Schedule Work
+
+<img width="1811" height="999" alt="image" src="https://github.com/user-attachments/assets/6014158a-f28c-4af6-847a-cb350f09c909" />
+
 
 📝 Notes Feature
 
