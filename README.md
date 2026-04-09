@@ -210,7 +210,7 @@ npm run dev
 
 ## 📎 Links
 
-* 🌐 **Live Demo Video Link:** [<ADD_DEPLOYED_LINK_HERE>](https://drive.google.com/file/d/1a18FBdsNeKMLoiWhrKdKX5G9dwp7giAR/view?usp=drivesdk )
+* 🌐 **Live Demo Video Link:** https://drive.google.com/file/d/1a18FBdsNeKMLoiWhrKdKX5G9dwp7giAR/view?usp=drivesdk 
 * 📂 **GitHub Repo:** https://github.com/GudimallaSujana/clok-website.git
 * 🈸**Deployed website link:** https://clokcalendarwebsite.vercel.app
 
