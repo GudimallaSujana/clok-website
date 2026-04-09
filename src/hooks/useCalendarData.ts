@@ -8,18 +8,19 @@ export function useCalendarData() {
   const { user } = useAuth();
   const {
     setNotes, setTasks, setBirthdays, setTileColors, setDayImages,
-    setLoading, setEmojiReactions, setHeroImage,
+    setLoading, setEmojiReactions, setHeroImage, setSchedules,
   } = useCalendarStore();
 
   const fetchAll = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [calRes, taskRes, bdayRes, heroRes] = await Promise.all([
+      const [calRes, taskRes, bdayRes, heroRes, schedRes] = await Promise.all([
         supabase.from('calendar_data').select('*').eq('user_id', user.id),
         supabase.from('tasks').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('birthdays').select('*').eq('user_id', user.id).order('date'),
         supabase.from('hero_images').select('*').eq('user_id', user.id),
+        supabase.from('schedules').select('*').eq('user_id', user.id).order('start_date'),
       ]);
 
       if (calRes.data) {
