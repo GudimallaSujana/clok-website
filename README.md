@@ -227,4 +227,3 @@ npm run dev
 * GitHub: https://github.com/GudimallaSujana
 * LinkedIn: https://www.linkedin.com/in/sujana-gudimalla/
 * Gmail: sujjugud@gmail.com
-* Contact Number: 7680844202
