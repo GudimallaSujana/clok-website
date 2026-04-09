@@ -63,15 +63,18 @@ function SidebarContent({ calendarData }: Props) {
     sidebarTab, setSidebarTab,
     tasks, addTask, toggleTask, deleteTask,
     birthdays, addBirthday, deleteBirthday,
-    notes, selectedRange,
+    notes, selectedRange, clearSelection,
+    schedules, addSchedule, deleteSchedule,
   } = useCalendarStore();
 
   const [newTaskText, setNewTaskText] = useState('');
   const [newTaskDate, setNewTaskDate] = useState('');
   const [newBdayName, setNewBdayName] = useState('');
   const [newBdayDate, setNewBdayDate] = useState('');
+  const [scheduleTitle, setScheduleTitle] = useState('');
   const [taskLoading, setTaskLoading] = useState(false);
   const [bdayLoading, setBdayLoading] = useState(false);
+  const [scheduleLoading, setScheduleLoading] = useState(false);
 
   const handleAddTask = async () => {
     if (!newTaskText.trim()) return;
@@ -110,6 +113,27 @@ function SidebarContent({ calendarData }: Props) {
     await calendarData.deleteBirthdayDB(id);
   };
 
+  const handleAddSchedule = async () => {
+    if (!selectedRange.start || !scheduleTitle.trim()) return;
+    setScheduleLoading(true);
+    const data = await calendarData.addScheduleDB(
+      scheduleTitle.trim(),
+      selectedRange.start,
+      selectedRange.end || undefined,
+    );
+    if (data) {
+      addSchedule({ id: data.id, title: data.title, start_date: data.start_date, end_date: data.end_date || undefined });
+    }
+    setScheduleTitle('');
+    clearSelection();
+    setScheduleLoading(false);
+  };
+
+  const handleDeleteSchedule = async (id: string) => {
+    deleteSchedule(id);
+    await calendarData.deleteScheduleDB(id);
+  };
+
   // Generate notifications
   const notifications = useMemo(() => {
     const items: { type: string; text: string; date: string; icon: string }[] = [];
@@ -133,12 +157,21 @@ function SidebarContent({ calendarData }: Props) {
       }
     });
 
+    // Upcoming schedules within 7 days
+    schedules.forEach((s) => {
+      const startDate = dayjs(s.start_date);
+      if (startDate.isBefore(nextWeek) && !startDate.isBefore(today, 'day')) {
+        const endStr = s.end_date ? ` → ${dayjs(s.end_date).format('MMM D')}` : '';
+        items.push({ type: 'schedule', text: s.title, date: startDate.format('MMM D') + endStr, icon: '📅' });
+      }
+    });
+
     return items.sort((a, b) => {
-      const dateA = dayjs(a.date, 'MMM D');
-      const dateB = dayjs(b.date, 'MMM D');
+      const dateA = dayjs(a.date.split(' → ')[0], 'MMM D');
+      const dateB = dayjs(b.date.split(' → ')[0], 'MMM D');
       return dateA.valueOf() - dateB.valueOf();
     });
-  }, [birthdays, tasks]);
+  }, [birthdays, tasks, schedules]);
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -177,12 +210,53 @@ function SidebarContent({ calendarData }: Props) {
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-sidebar-foreground">Selected Range</h3>
                 {selectedRange.start ? (
-                  <div className="p-3 rounded-lg bg-sidebar-accent text-sm text-sidebar-accent-foreground">
-                    <p>{dayjs(selectedRange.start).format('MMM D, YYYY')}</p>
-                    {selectedRange.end && <p>→ {dayjs(selectedRange.end).format('MMM D, YYYY')}</p>}
+                  <div className="space-y-2">
+                    <div className="p-3 rounded-lg bg-sidebar-accent text-sm text-sidebar-accent-foreground">
+                      <p>{dayjs(selectedRange.start).format('MMM D, YYYY')}</p>
+                      {selectedRange.end && <p>→ {dayjs(selectedRange.end).format('MMM D, YYYY')}</p>}
+                    </div>
+                    <input
+                      value={scheduleTitle}
+                      onChange={(e) => setScheduleTitle(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleAddSchedule(); }}
+                      placeholder="Event title..."
+                      className="w-full px-3 py-2 text-sm rounded-lg bg-background border border-input text-foreground placeholder:text-muted-foreground"
+                    />
+                    <button
+                      onClick={handleAddSchedule}
+                      disabled={scheduleLoading || !scheduleTitle.trim()}
+                      className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+                    >
+                      {scheduleLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                      Add to Schedule
+                    </button>
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">Click dates to select a range</p>
+                )}
+
+                {schedules.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <h3 className="text-sm font-semibold text-sidebar-foreground">Scheduled Events</h3>
+                    {schedules.map((s) => (
+                      <div key={s.id} className="flex items-center gap-2 group p-2 rounded-lg bg-sidebar-accent/50">
+                        <CalendarDays className="w-4 h-4 text-primary flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-sidebar-foreground truncate">{s.title}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {dayjs(s.start_date).format('MMM D')}
+                            {s.end_date && ` → ${dayjs(s.end_date).format('MMM D')}`}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteSchedule(s.id)}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-destructive transition-opacity"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
