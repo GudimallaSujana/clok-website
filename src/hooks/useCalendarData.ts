@@ -170,11 +170,28 @@ export function useCalendarData() {
       .upsert({ user_id: user.id, date, emoji_reactions: JSON.stringify(emojis) } as any, { onConflict: 'user_id,date' });
   };
 
+  const addScheduleDB = async (title: string, start_date: string, end_date?: string) => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('schedules')
+      .insert({ user_id: user.id, title, start_date, end_date: end_date || null } as any)
+      .select()
+      .single();
+    if (error) { toast.error('Failed to save schedule'); return; }
+    return data;
+  };
+
+  const deleteScheduleDB = async (id: string) => {
+    if (!user) return;
+    await supabase.from('schedules').delete().eq('id', id).eq('user_id', user.id);
+  };
+
   return {
     fetchAll,
     addNoteDB, deleteNoteDB,
     addTaskDB, toggleTaskDB, deleteTaskDB,
     addBirthdayDB, deleteBirthdayDB,
+    addScheduleDB, deleteScheduleDB,
     uploadDayImage, uploadHeroImage,
     deleteDayImageDB, deleteHeroImageDB,
     setTileColorDB, setEmojiReactionDB,
